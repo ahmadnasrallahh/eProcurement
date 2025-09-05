@@ -28,6 +28,32 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+async function createDefaultAdmin() {
+  try {
+    // Check if admin already exists
+    const adminUser = await storage.getUserByUsername('admin');
+    if (!adminUser) {
+      // Create default admin user
+      const defaultAdmin = {
+        username: 'admin',
+        email: 'admin@system.local',
+        password: await hashPassword('admin123'),
+        role: 'admin',
+        organizationName: 'System Administration',
+        contactPerson: 'System Administrator',
+        phoneNumber: '+1-000-000-0000',
+        address: 'System',
+        isActive: true
+      };
+      
+      await storage.createUser(defaultAdmin);
+      console.log('Default admin user created - Username: admin, Password: admin123');
+    }
+  } catch (error) {
+    console.error('Error creating default admin user:', error);
+  }
+}
+
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
@@ -40,6 +66,9 @@ export function setupAuth(app: Express) {
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Create default admin user on startup
+  createDefaultAdmin();
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
