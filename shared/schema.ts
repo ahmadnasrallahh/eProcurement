@@ -174,6 +174,10 @@ export const insertTenderSchema = createInsertSchema(tenders).omit({
   createdAt: true,
   updatedAt: true,
   referenceNumber: true,
+}).extend({
+  publishDate: z.string().optional().transform((val) => val ? new Date(val) : undefined),
+  submissionDeadline: z.string().transform((val) => new Date(val)),
+  openingDate: z.string().transform((val) => new Date(val)),
 });
 
 export const insertBidSchema = createInsertSchema(bids).omit({
