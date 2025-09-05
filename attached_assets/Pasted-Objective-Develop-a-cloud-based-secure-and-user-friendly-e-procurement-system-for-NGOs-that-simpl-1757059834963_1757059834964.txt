@@ -1,0 +1,146 @@
+Objective:
+Develop a cloud-based, secure, and user-friendly e-procurement system for NGOs that simplifies tender management and supports both Arabic and English users.
+
+Core Requirements
+
+Simplicity & Usability:
+
+Clean, intuitive interface with minimal learning curve.
+
+Mobile-friendly design for accessibility in low-connectivity areas.
+
+User Roles & Access Control (Role-Based Access):
+The system must support 3 distinct roles, with access to screens and functions controlled by the Admin:
+
+Admin:
+
+Full control of the system.
+
+Create/manage user accounts (Procurement & Bidders).
+
+Define which screens and features are accessible for each role.
+
+Oversee reporting, auditing, and security logs.
+
+Procurement Officer (NGO staff):
+
+Create and publish tenders.
+
+Upload and manage tender documents.
+
+Review and respond to clarification requests.
+
+Manage bid opening (view/decrypt bids after deadline).
+
+Generate procurement reports.
+
+Bidder (Vendors/Suppliers):
+
+Register and maintain organization profile.
+
+Download tender documents (e-Distribution).
+
+Submit clarification requests (e-Clarifications).
+
+Submit bids electronically and track submission status (e-Opening).
+
+Access Control Example:
+A bidder should only see tender listings, clarifications, and bid submission screens, while procurement officers have access to tender creation and reporting. Admins control who sees what.
+
+Core Functionality:
+
+e-Distribution:
+
+Users can download tender documents electronically.
+
+Tender files are stored securely and accessible anytime after login.
+
+Supports multiple formats (PDF, Word, Excel).
+
+Tracks downloads for audit purposes.
+
+e-Clarifications:
+
+Captures clarification requests from users regarding tender details.
+
+Requests include user info and timestamp.
+
+Clarifications can be reviewed by the procurement team before response.
+
+Provides a central repository for transparency.
+
+e-Opening:
+
+Enables electronic submission of bids and secure bid opening.
+
+Submitted bids are encrypted or protected until the official opening time.
+
+Only authorized personnel can access bids, ensuring confidentiality.
+
+Logs the bid-opening process for audit and compliance.
+
+Language Support:
+
+Fully supports Arabic and English. Users can toggle seamlessly.
+
+Time Zone Compatibility:
+
+Displays all times according to the user’s local time zone.
+
+Reporting:
+
+Track all procurement actions.
+
+Generate downloadable and shareable reports.
+
+Unlimited Tenders:
+
+Support unlimited tender processes without system slowdown.
+
+User Access:
+
+Each license supports up to 3 users (procurement focal points).
+
+Hosting & Performance:
+
+Deploy on high-performance cloud infrastructure.
+
+Fast loading and smooth UX, even in areas with limited internet speed.
+
+Security & Compliance:
+
+Fully secured following international standards.
+
+GDPR-compliant data protection.
+
+Technical Support:
+
+Real-time support for troubleshooting.
+
+Maintenance:
+
+Provider is responsible for updates and resolving technical issues.
+
+Accessibility:
+
+System should be reachable from all locations, bypassing local digital restrictions where possible.
+
+Bonus Features (Optional):
+
+Dashboard with visual tender statistics.
+
+Email/SMS notifications for tender updates.
+
+Audit logs for all user actions.
+
+Tech Stack Suggestion:
+
+Frontend: React + Tailwind / Vue
+
+Backend: Node.js / Python (Flask or Django)
+
+Database: PostgreSQL / MySQL
+
+Cloud Hosting: AWS / Azure / GCP
+
+Authentication: OAuth2 / JWT (with Role-Based Access Control)
