@@ -1,6 +1,6 @@
 import { users, tenders, bids, clarifications, auditLogs, tenderDocuments, type User, type InsertUser, type Tender, type InsertTender, type Bid, type InsertBid, type Clarification, type InsertClarification, type TenderDocument } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, desc, and, gte, lte, like } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -15,42 +15,42 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
-  
+
   // Tender management
   getTender(id: string): Promise<Tender | undefined>;
   getTenderByReference(referenceNumber: string): Promise<Tender | undefined>;
   createTender(tender: InsertTender): Promise<Tender>;
   updateTender(id: string, updates: Partial<Tender>): Promise<Tender | undefined>;
   getTenders(filters?: { status?: string; createdById?: string }): Promise<Tender[]>;
-  
+
   // Bid management
   getBid(id: string): Promise<Bid | undefined>;
   createBid(bid: InsertBid): Promise<Bid>;
   updateBid(id: string, updates: Partial<Bid>): Promise<Bid | undefined>;
   getBidsByTender(tenderId: string): Promise<Bid[]>;
   getBidsByBidder(bidderId: string): Promise<Bid[]>;
-  
+
   // Clarification management
   getClarification(id: string): Promise<Clarification | undefined>;
   createClarification(clarification: InsertClarification): Promise<Clarification>;
   updateClarification(id: string, updates: Partial<Clarification>): Promise<Clarification | undefined>;
   getClarificationsByTender(tenderId: string): Promise<Clarification[]>;
   getPendingClarifications(): Promise<Clarification[]>;
-  
+
   // Document management
   createTenderDocument(document: Omit<TenderDocument, 'id' | 'createdAt'>): Promise<TenderDocument>;
   getTenderDocument(id: string): Promise<TenderDocument | undefined>;
   getTenderDocuments(tenderId: string): Promise<TenderDocument[]>;
   updateDocumentDownloadCount(id: string): Promise<void>;
   deleteTenderDocument(id: string): Promise<boolean>;
-  
+
   // Bid document management
   createBidDocument(document: any): Promise<any>;
   getBidDocuments(bidId: string): Promise<any[]>;
-  
+
   // Audit logs
   createAuditLog(log: Omit<typeof auditLogs.$inferInsert, 'id' | 'createdAt'>): Promise<void>;
-  
+
   // Session store
   sessionStore: session.SessionStore;
 }
@@ -59,9 +59,9 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.SessionStore;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true 
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true
     });
   }
 
@@ -114,9 +114,9 @@ export class DatabaseStorage implements IStorage {
   async createTender(insertTender: InsertTender): Promise<Tender> {
     // Generate reference number
     const year = new Date().getFullYear();
-    const count = await db.select().from(tenders).where(eq(tenders.referenceNumber, `REF-${year}-%`));
+    const count = await db.select().from(tenders).where(like(tenders.referenceNumber, `REF-${year}-%`));
     const referenceNumber = `REF-${year}-${String(count.length + 1).padStart(3, '0')}`;
-    
+
     const [tender] = await db
       .insert(tenders)
       .values({ ...insertTender, referenceNumber })
@@ -135,15 +135,15 @@ export class DatabaseStorage implements IStorage {
 
   async getTenders(filters?: { status?: string; createdById?: string }): Promise<Tender[]> {
     let query = db.select().from(tenders);
-    
+
     if (filters?.status) {
       query = query.where(eq(tenders.status, filters.status));
     }
-    
+
     if (filters?.createdById) {
       query = query.where(eq(tenders.createdById, filters.createdById));
     }
-    
+
     return await query.orderBy(desc(tenders.createdAt));
   }
 
@@ -253,7 +253,7 @@ export class DatabaseStorage implements IStorage {
       uploadedById: document.uploadedById,
       createdAt: new Date(),
     };
-    
+
     // Store reference in the bid's documents field
     const bid = await this.getBid(document.bidId);
     if (bid) {
@@ -261,7 +261,7 @@ export class DatabaseStorage implements IStorage {
       documents.push(doc);
       await this.updateBid(document.bidId, { documents });
     }
-    
+
     return doc;
   }
 
