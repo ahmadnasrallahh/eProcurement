@@ -1,24 +1,19 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { TenderCard } from "@/components/tender-card";
+import { BidSubmission } from "@/components/bid-submission";
+import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/components/language-provider";
 import { useAuth } from "@/hooks/use-auth";
-import { formatInTimezone } from "@/lib/timezone";
-import { TenderCard } from "@/components/tender-card";
-import { 
-  File, 
-  Search, 
-  Filter, 
-  Plus,
-  Eye,
-  Edit,
-  Download
-} from "lucide-react";
-import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
+import { Plus, Search, Filter, Calendar, DollarSign, MapPin, Clock, FileText, Users, Gavel, ArrowLeft, Download } from "lucide-react";
 
 export default function Tenders() {
   const { user } = useAuth();
@@ -26,7 +21,9 @@ export default function Tenders() {
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
   const { data: tenders, isLoading, error } = useQuery({
     queryKey: ["/api/tenders"],
   });
@@ -65,6 +62,31 @@ export default function Tenders() {
     if (user?.role === 'admin') return true;
     if (user?.role === 'procurement_officer' && tender.createdById === user.id) return true;
     return false;
+  };
+
+  const handleDownloadDocument = async (documentId: string, fileName: string) => {
+    try {
+      const response = await fetch(`/api/documents/${documentId}/download`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = fileName; 
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error downloading document:", err);
+      toast({
+        title: t('common.error', 'Error'),
+        description: t('tender.downloadError', 'Failed to download document. Please try again.'),
+        variant: "destructive",
+      });
+    }
   };
 
   return (

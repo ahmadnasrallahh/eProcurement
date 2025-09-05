@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/components/language-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
-import { FileText, DollarSign, Upload, Send, AlertCircle } from "lucide-react";
+import { FileText, DollarSign, Upload, Send, AlertCircle, X } from "lucide-react";
 
 const bidSchema = z.object({
   bidAmount: z.string().min(1, 'Bid amount is required'),
@@ -47,6 +47,7 @@ export function BidSubmission({ tender, onSuccess, onCancel }: BidSubmissionProp
 
   const submitBidMutation = useMutation({
     mutationFn: async (data: BidFormData) => {
+      // First submit the bid
       const bidData = {
         ...data,
         documents: documents.map(doc => ({
@@ -57,7 +58,20 @@ export function BidSubmission({ tender, onSuccess, onCancel }: BidSubmissionProp
       };
       
       const res = await apiRequest("POST", `/api/tenders/${tender.id}/bids`, bidData);
-      return await res.json();
+      const bid = await res.json();
+      
+      // Then upload bid documents if any
+      if (documents.length > 0) {
+        for (const file of documents) {
+          const formData = new FormData();
+          formData.append('file', file);
+          await apiRequest("POST", `/api/bids/${bid.id}/documents`, formData, {
+            headers: {}, // Let browser set Content-Type for FormData
+          });
+        }
+      }
+      
+      return bid;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/my-bids"] });
@@ -279,7 +293,7 @@ export function BidSubmission({ tender, onSuccess, onCancel }: BidSubmissionProp
                           onClick={() => removeDocument(index)}
                           data-testid={`button-remove-document-${index}`}
                         >
-                          ×
+                          <X className="w-4 h-4" />
                         </Button>
                       </div>
                     ))}

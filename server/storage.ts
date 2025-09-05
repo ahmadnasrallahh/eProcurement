@@ -39,9 +39,14 @@ export interface IStorage {
   
   // Document management
   createTenderDocument(document: Omit<TenderDocument, 'id' | 'createdAt'>): Promise<TenderDocument>;
+  getTenderDocument(id: string): Promise<TenderDocument | undefined>;
   getTenderDocuments(tenderId: string): Promise<TenderDocument[]>;
   updateDocumentDownloadCount(id: string): Promise<void>;
   deleteTenderDocument(id: string): Promise<boolean>;
+  
+  // Bid document management
+  createBidDocument(document: any): Promise<any>;
+  getBidDocuments(bidId: string): Promise<any[]>;
   
   // Audit logs
   createAuditLog(log: Omit<typeof auditLogs.$inferInsert, 'id' | 'createdAt'>): Promise<void>;
@@ -210,6 +215,11 @@ export class DatabaseStorage implements IStorage {
     return doc;
   }
 
+  async getTenderDocument(id: string): Promise<TenderDocument | undefined> {
+    const [document] = await db.select().from(tenderDocuments).where(eq(tenderDocuments.id, id));
+    return document || undefined;
+  }
+
   async getTenderDocuments(tenderId: string): Promise<TenderDocument[]> {
     return await db.select().from(tenderDocuments).where(eq(tenderDocuments.tenderId, tenderId)).orderBy(asc(tenderDocuments.originalName));
   }
@@ -228,6 +238,36 @@ export class DatabaseStorage implements IStorage {
 
   async createAuditLog(log: Omit<typeof auditLogs.$inferInsert, 'id' | 'createdAt'>): Promise<void> {
     await db.insert(auditLogs).values(log);
+  }
+
+  async createBidDocument(document: any): Promise<any> {
+    // For now, we'll store bid documents as a simple structure
+    // In a real implementation, you might want a separate bidDocuments table
+    const doc = {
+      id: Math.random().toString(36).substring(7),
+      bidId: document.bidId,
+      fileName: document.fileName,
+      originalName: document.originalName,
+      fileSize: document.fileSize,
+      mimeType: document.mimeType,
+      uploadedById: document.uploadedById,
+      createdAt: new Date(),
+    };
+    
+    // Store reference in the bid's documents field
+    const bid = await this.getBid(document.bidId);
+    if (bid) {
+      const documents = bid.documents ? JSON.parse(JSON.stringify(bid.documents)) : [];
+      documents.push(doc);
+      await this.updateBid(document.bidId, { documents });
+    }
+    
+    return doc;
+  }
+
+  async getBidDocuments(bidId: string): Promise<any[]> {
+    const bid = await this.getBid(bidId);
+    return bid?.documents ? JSON.parse(JSON.stringify(bid.documents)) : [];
   }
 }
 

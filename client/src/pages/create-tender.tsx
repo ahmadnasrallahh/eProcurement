@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/components/language-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
-import { Calendar, CalendarDays, FileText, Save, ArrowLeft } from "lucide-react";
+import { Calendar, CalendarDays, FileText, Save, ArrowLeft, Upload, X } from "lucide-react";
 
 const tenderSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -42,6 +42,7 @@ export default function CreateTender() {
   const queryClient = useQueryClient();
   
   const [isDraft, setIsDraft] = useState(true);
+  const [documents, setDocuments] = useState<File[]>([]);
 
   const form = useForm<TenderFormData>({
     resolver: zodResolver(tenderSchema),
@@ -59,8 +60,22 @@ export default function CreateTender() {
 
   const createTenderMutation = useMutation({
     mutationFn: async (data: TenderFormData & { status: string }) => {
+      // First create the tender
       const res = await apiRequest("POST", "/api/tenders", data);
-      return await res.json();
+      const tender = await res.json();
+      
+      // Then upload documents if any
+      if (documents.length > 0) {
+        for (const file of documents) {
+          const formData = new FormData();
+          formData.append('file', file);
+          await apiRequest("POST", `/api/tenders/${tender.id}/documents`, formData, {
+            headers: {}, // Let browser set Content-Type for FormData
+          });
+        }
+      }
+      
+      return tender;
     },
     onSuccess: (tender) => {
       queryClient.invalidateQueries({ queryKey: ["/api/tenders"] });
@@ -99,6 +114,15 @@ export default function CreateTender() {
   const handlePublish = () => {
     setIsDraft(false);
     form.handleSubmit(onSubmit)();
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setDocuments(prev => [...prev, ...files]);
+  };
+
+  const removeDocument = (index: number) => {
+    setDocuments(prev => prev.filter((_, i) => i !== index));
   };
 
   // Check permissions
@@ -403,6 +427,84 @@ export default function CreateTender() {
                         </FormItem>
                       )}
                     />
+                  </CardContent>
+                </Card>
+
+                {/* Document Upload */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      {t('tender.documents', 'Tender Documents')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label htmlFor="tender-documents" className="block text-sm font-medium mb-2">
+                        {t('tender.uploadDocuments', 'Upload Documents')}
+                      </label>
+                      <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                        <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {t('tender.uploadDesc', 'Click to upload tender documents')}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t('tender.fileTypes', 'PDF, Word, Excel files up to 10MB')}
+                        </p>
+                        <input
+                          id="tender-documents"
+                          type="file"
+                          multiple
+                          accept=".pdf,.doc,.docx,.xls,.xlsx"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          data-testid="input-tender-documents"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-3"
+                          onClick={() => document.getElementById('tender-documents')?.click()}
+                          data-testid="button-upload-documents"
+                        >
+                          {t('tender.selectFiles', 'Select Files')}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Uploaded Documents */}
+                    {documents.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="font-medium">{t('tender.uploadedDocuments', 'Uploaded Documents')}</h4>
+                        {documents.map((doc, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg"
+                            data-testid={`uploaded-document-${index}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <FileText className="w-4 h-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm font-medium">{doc.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {(doc.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeDocument(index)}
+                              data-testid={`button-remove-document-${index}`}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>

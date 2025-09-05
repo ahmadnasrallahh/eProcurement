@@ -187,7 +187,7 @@ export function registerRoutes(app: Express): Server {
 
   app.get('/api/documents/:id/download', requireAuth, async (req, res) => {
     try {
-      const [document] = await storage.getTenderDocuments(''); // This needs to be fixed to get by document ID
+      const document = await storage.getTenderDocument(req.params.id);
       if (!document) {
         return res.status(404).json({ message: 'Document not found' });
       }
@@ -260,6 +260,33 @@ export function registerRoutes(app: Express): Server {
       res.json(bids);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch bids' });
+    }
+  });
+
+  app.post('/api/bids/:id/documents', requireRole(['bidder']), upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+      
+      // Verify bid belongs to the bidder
+      const bid = await storage.getBid(req.params.id);
+      if (!bid || bid.bidderId !== req.user.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      
+      const document = await storage.createBidDocument({
+        bidId: req.params.id,
+        fileName: req.file.filename,
+        originalName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        uploadedById: req.user.id,
+      });
+      
+      res.status(201).json(document);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to upload document' });
     }
   });
 
