@@ -179,6 +179,19 @@ export function TenderCard({ tender, userRole, canEdit, onView, onEdit }: Tender
                   <Edit className="w-4 h-4" />
                 </Button>
               )}
+
+              {(userRole === 'admin' || (userRole === 'procurement_officer' && canEdit)) && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 w-8 p-0"
+                  onClick={() => window.location.href = `/tenders/${tender.id}/evaluate`}
+                  data-testid={`button-evaluate-${tender.id}`}
+                  title={t('bid.evaluate', 'Evaluate Bids')}
+                >
+                  <Scale className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           </div>
         </div>

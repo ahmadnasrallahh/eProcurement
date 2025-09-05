@@ -105,7 +105,7 @@ export const translations = {
         completed: "Completed",
         cancelled: "Cancelled",
       },
-      category: {
+      categories: {
         goods: "Goods & Supplies",
         services: "Services",
         construction: "Construction",
@@ -385,7 +385,7 @@ export const translations = {
         completed: "مكتمل",
         cancelled: "ملغي",
       },
-      category: {
+      categories: {
         goods: "السلع والمستلزمات",
         services: "الخدمات",
         construction: "البناء والتشييد",

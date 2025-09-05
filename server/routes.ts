@@ -263,6 +263,40 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.patch('/api/bids/:id', requireRole(['admin', 'procurement_officer']), async (req, res) => {
+    try {
+      const bid = await storage.getBid(req.params.id);
+      if (!bid) {
+        return res.status(404).json({ message: 'Bid not found' });
+      }
+      
+      // Check permissions - procurement officer can only evaluate their own tender's bids
+      if (req.user.role === 'procurement_officer') {
+        const tender = await storage.getTender(bid.tenderId);
+        if (!tender || tender.createdById !== req.user.id) {
+          return res.status(403).json({ message: 'Access denied' });
+        }
+      }
+      
+      const updatedBid = await storage.updateBid(req.params.id, req.body);
+      
+      // Log audit
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'EVALUATE_BID',
+        resourceType: 'bid',
+        resourceId: req.params.id,
+        details: req.body,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+      
+      res.json(updatedBid);
+    } catch (error) {
+      res.status(400).json({ message: 'Failed to update bid' });
+    }
+  });
+
   app.post('/api/bids/:id/documents', requireRole(['bidder']), upload.single('file'), async (req, res) => {
     try {
       if (!req.file) {

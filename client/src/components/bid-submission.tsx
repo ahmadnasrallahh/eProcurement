@@ -65,9 +65,18 @@ export function BidSubmission({ tender, onSuccess, onCancel }: BidSubmissionProp
         for (const file of documents) {
           const formData = new FormData();
           formData.append('file', file);
-          await apiRequest("POST", `/api/bids/${bid.id}/documents`, formData, {
-            headers: {}, // Let browser set Content-Type for FormData
+          
+          // Use fetch directly for file uploads to avoid JSON content-type header
+          const uploadRes = await fetch(`/api/bids/${bid.id}/documents`, {
+            method: "POST",
+            body: formData,
+            credentials: "include",
           });
+          
+          if (!uploadRes.ok) {
+            const errorText = await uploadRes.text();
+            throw new Error(`Document upload failed: ${errorText}`);
+          }
         }
       }
 
