@@ -6,24 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Shield, Search, Users, UserCheck, UserX, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/components/language-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { formatInTimezone } from "@/lib/timezone";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  Users, 
-  Search, 
-  Filter, 
-  Edit, 
-  UserCheck, 
-  UserX, 
-  Building2,
-  Mail,
-  Phone,
-  Shield,
-  AlertCircle
-} from "lucide-react";
 
 export default function UserManagement() {
   const { user } = useAuth();
@@ -33,6 +23,17 @@ export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [createUserForm, setCreateUserForm] = useState({
+    username: "",
+    email: "",
+    password: "",
+    role: "bidder" as const,
+    organizationName: "",
+    contactPerson: "",
+    phone: "",
+    address: "",
+  });
 
   const { data: users, isLoading, error } = useQuery({
     queryKey: ["/api/users"],
@@ -54,6 +55,38 @@ export default function UserManagement() {
     onError: (error: any) => {
       toast({
         title: t('user.updateError', 'Failed to update user'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: typeof createUserForm) => {
+      const res = await apiRequest("POST", "/api/admin/create-user", userData);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setIsCreateDialogOpen(false);
+      setCreateUserForm({
+        username: "",
+        email: "",
+        password: "",
+        role: "bidder",
+        organizationName: "",
+        contactPerson: "",
+        phone: "",
+        address: "",
+      });
+      toast({
+        title: t('user.createSuccess', 'User created successfully'),
+        description: t('user.createSuccessDesc', 'New user has been created'),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('common.error', 'Error'),
         description: error.message,
         variant: "destructive",
       });
@@ -96,6 +129,11 @@ export default function UserManagement() {
     return roleMap[role] || role;
   };
 
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    createUserMutation.mutate(createUserForm);
+  };
+
   // Check permissions
   if (user?.role !== 'admin') {
     return (
@@ -132,6 +170,161 @@ export default function UserManagement() {
 
         {/* Search and Filters */}
         <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  {t('user.management', 'User Management')}
+                </CardTitle>
+                <CardDescription>
+                  {t('user.managementDesc', 'Manage user accounts and permissions')}
+                </CardDescription>
+              </div>
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button data-testid="button-create-user">
+                    <Plus className="w-4 h-4 mr-2" />
+                    {t('user.createUser', 'Create User')}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>{t('user.createNewUser', 'Create New User')}</DialogTitle>
+                    <DialogDescription>
+                      {t('user.createUserDesc', 'Add a new user to the system')}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateUser} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="create-username">{t('auth.username', 'Username')}</Label>
+                        <Input
+                          id="create-username"
+                          type="text"
+                          value={createUserForm.username}
+                          onChange={(e) => setCreateUserForm({ ...createUserForm, username: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="create-email">{t('auth.email', 'Email')}</Label>
+                        <Input
+                          id="create-email"
+                          type="email"
+                          value={createUserForm.email}
+                          onChange={(e) => setCreateUserForm({ ...createUserForm, email: e.target.value })}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="create-password">{t('auth.password', 'Password')}</Label>
+                      <Input
+                        id="create-password"
+                        type="password"
+                        value={createUserForm.password}
+                        onChange={(e) => setCreateUserForm({ ...createUserForm, password: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="create-role">{t('auth.role', 'Role')}</Label>
+                      <Select
+                        value={createUserForm.role}
+                        onValueChange={(value: "bidder" | "procurement_officer" | "admin") => 
+                          setCreateUserForm({ ...createUserForm, role: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="bidder">{t('roles.bidder', 'Bidder/Supplier')}</SelectItem>
+                          <SelectItem value="procurement_officer">{t('roles.procurementOfficer', 'Procurement Officer')}</SelectItem>
+                          <SelectItem value="admin">{t('roles.admin', 'Administrator')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="create-org">{t('auth.organizationName', 'Organization Name')}</Label>
+                      <Input
+                        id="create-org"
+                        type="text"
+                        value={createUserForm.organizationName}
+                        onChange={(e) => setCreateUserForm({ ...createUserForm, organizationName: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="create-contact">{t('auth.contactPerson', 'Contact Person')}</Label>
+                      <Input
+                        id="create-contact"
+                        type="text"
+                        value={createUserForm.contactPerson}
+                        onChange={(e) => setCreateUserForm({ ...createUserForm, contactPerson: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="create-phone">{t('auth.phone', 'Phone')}</Label>
+                      <Input
+                        id="create-phone"
+                        type="tel"
+                        value={createUserForm.phone}
+                        onChange={(e) => setCreateUserForm({ ...createUserForm, phone: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="create-address">{t('auth.address', 'Address')}</Label>
+                      <Textarea
+                        id="create-address"
+                        value={createUserForm.address}
+                        onChange={(e) => setCreateUserForm({ ...createUserForm, address: e.target.value })}
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="flex gap-2 pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsCreateDialogOpen(false)}
+                        className="flex-1"
+                      >
+                        {t('common.cancel', 'Cancel')}
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={createUserMutation.isPending}
+                        className="flex-1"
+                      >
+                        {createUserMutation.isPending ? t('common.loading', 'Loading...') : t('user.createUser', 'Create User')}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <div className="flex items-center gap-4 mt-4">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder={t('user.searchPlaceholder', 'Search users...')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-users"
+                />
+              </div>
+            </div>
+          </CardHeader>
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
@@ -308,7 +501,7 @@ export default function UserManagement() {
                           {u.username?.charAt(0).toUpperCase() || 'U'}
                         </span>
                       </div>
-                      
+
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center gap-3">
                           <h4 className="font-medium truncate" data-testid={`user-username-${u.id}`}>
@@ -321,7 +514,7 @@ export default function UserManagement() {
                             {u.isActive ? t('user.active', 'Active') : t('user.inactive', 'Inactive')}
                           </Badge>
                         </div>
-                        
+
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           {u.email && (
                             <div className="flex items-center gap-1">
@@ -342,7 +535,7 @@ export default function UserManagement() {
                             </div>
                           )}
                         </div>
-                        
+
                         {u.createdAt && (
                           <p className="text-xs text-muted-foreground">
                             {t('user.joinedOn', 'Joined')}: {formatInTimezone(new Date(u.createdAt), user?.timezone || 'UTC')}

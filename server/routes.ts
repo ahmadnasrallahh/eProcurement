@@ -6,6 +6,16 @@ import { insertTenderSchema, insertBidSchema, insertClarificationSchema } from "
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
 
 // Setup multer for file uploads
 const upload = multer({
@@ -323,6 +333,35 @@ export function registerRoutes(app: Express): Server {
       res.json(users);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch users' });
+    }
+  });
+
+  app.post('/api/admin/create-user', requireRole(['admin']), async (req, res) => {
+    try {
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
+        return res.status(400).json({ message: 'Username already exists' });
+      }
+
+      const user = await storage.createUser({
+        ...req.body,
+        password: await hashPassword(req.body.password),
+      });
+
+      // Log audit
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'CREATE_USER',
+        resourceType: 'user',
+        resourceId: user.id,
+        details: { username: user.username, role: user.role },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.status(201).json(user);
+    } catch (error) {
+      res.status(400).json({ message: 'Failed to create user', error: error.message });
     }
   });
 
