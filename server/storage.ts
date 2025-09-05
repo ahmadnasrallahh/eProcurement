@@ -1,6 +1,6 @@
 import { users, tenders, bids, clarifications, auditLogs, tenderDocuments, type User, type InsertUser, type Tender, type InsertTender, type Bid, type InsertBid, type Clarification, type InsertClarification, type TenderDocument } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gte, lte, like } from "drizzle-orm";
+import { eq, desc, and, gte, lte, like, asc } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -225,10 +225,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateDocumentDownloadCount(id: string): Promise<void> {
-    await db
-      .update(tenderDocuments)
-      .set({ downloadCount: db.select().from(tenderDocuments).where(eq(tenderDocuments.id, id)) })
-      .where(eq(tenderDocuments.id, id));
+    const [doc] = await db.select().from(tenderDocuments).where(eq(tenderDocuments.id, id));
+    if (doc) {
+      await db
+        .update(tenderDocuments)
+        .set({ downloadCount: (doc.downloadCount || 0) + 1 })
+        .where(eq(tenderDocuments.id, id));
+    }
   }
 
   async deleteTenderDocument(id: string): Promise<boolean> {

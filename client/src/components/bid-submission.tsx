@@ -56,10 +56,10 @@ export function BidSubmission({ tender, onSuccess, onCancel }: BidSubmissionProp
           type: doc.type,
         })),
       };
-      
+
       const res = await apiRequest("POST", `/api/tenders/${tender.id}/bids`, bidData);
       const bid = await res.json();
-      
+
       // Then upload bid documents if any
       if (documents.length > 0) {
         for (const file of documents) {
@@ -70,7 +70,7 @@ export function BidSubmission({ tender, onSuccess, onCancel }: BidSubmissionProp
           });
         }
       }
-      
+
       return bid;
     },
     onSuccess: () => {
@@ -275,7 +275,7 @@ export function BidSubmission({ tender, onSuccess, onCancel }: BidSubmissionProp
                       <div
                         key={index}
                         className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg"
-                        data-testid={`uploaded-document-${index}`}
+                        data-testid={`uploaded-bid-document-${index}`}
                       >
                         <div className="flex items-center gap-3">
                           <FileText className="w-4 h-4 text-muted-foreground" />
@@ -291,7 +291,7 @@ export function BidSubmission({ tender, onSuccess, onCancel }: BidSubmissionProp
                           variant="ghost"
                           size="sm"
                           onClick={() => removeDocument(index)}
-                          data-testid={`button-remove-document-${index}`}
+                          data-testid={`button-remove-bid-document-${index}`}
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -321,8 +321,8 @@ export function BidSubmission({ tender, onSuccess, onCancel }: BidSubmissionProp
               data-testid="button-submit-bid"
             >
               <Send className="w-4 h-4 mr-2" />
-              {submitBidMutation.isPending 
-                ? t('bid.submitting', 'Submitting...') 
+              {submitBidMutation.isPending
+                ? t('bid.submitting', 'Submitting...')
                 : t('bid.submitBid', 'Submit Bid')
               }
             </Button>
