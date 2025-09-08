@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO E-Procurement System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                borderRadius: {
+                    lg: "var(--radius)",
+                    md: "calc(var(--radius) - 2px)",
+                    sm: "calc(var(--radius) - 4px)",
+                },
+                colors: {
+                    background: "var(--background)",
+                    foreground: "var(--foreground)",
+                    card: {
+                        DEFAULT: "var(--card)",
+                        foreground: "var(--card-foreground)",
+                    },
+                    popover: {
+                        DEFAULT: "var(--popover)",
+                        foreground: "var(--popover-foreground)",
+                    },
+                    primary: {
+                        DEFAULT: "var(--primary)",
+                        foreground: "var(--primary-foreground)",
+                    },
+                    secondary: {
+                        DEFAULT: "var(--secondary)",
+                        foreground: "var(--secondary-foreground)",
+                    },
+                    muted: {
+                        DEFAULT: "var(--muted)",
+                        foreground: "var(--muted-foreground)",
+                    },
+                    accent: {
+                        DEFAULT: "var(--accent)",
+                        foreground: "var(--accent-foreground)",
+                    },
+                    destructive: {
+                        DEFAULT: "var(--destructive)",
+                        foreground: "var(--destructive-foreground)",
+                    },
+                    border: "var(--border)",
+                    input: "var(--input)",
+                    ring: "var(--ring)",
+                    chart: {
+                        "1": "var(--chart-1)",
+                        "2": "var(--chart-2)",
+                        "3": "var(--chart-3)",
+                        "4": "var(--chart-4)",
+                        "5": "var(--chart-5)",
+                    }
+                },
+                fontFamily: {
+                    sans: ["Inter", "var(--font-sans)"],
+                }
+            },
+        }
+    };
+    </script>
+    <style>
+        :root {
+            --background: hsl(220 15% 97%);
+            --foreground: hsl(220 9% 9%);
+            --card: hsl(0 0% 100%);
+            --card-foreground: hsl(220 9% 9%);
+            --popover: hsl(0 0% 100%);
+            --popover-foreground: hsl(220 9% 9%);
+            --primary: hsl(221 83% 53%);
+            --primary-foreground: hsl(210 40% 98%);
+            --secondary: hsl(220 14% 96%);
+            --secondary-foreground: hsl(220 9% 46%);
+            --muted: hsl(220 14% 96%);
+            --muted-foreground: hsl(220 9% 46%);
+            --accent: hsl(220 14% 96%);
+            --accent-foreground: hsl(220 9% 9%);
+            --destructive: hsl(0 84% 60%);
+            --destructive-foreground: hsl(210 40% 98%);
+            --border: hsl(220 13% 91%);
+            --input: hsl(220 13% 91%);
+            --ring: hsl(221 83% 53%);
+            --radius: 0.5rem;
+            --chart-1: hsl(221 83% 53%);
+            --chart-2: hsl(212 95% 68%);
+            --chart-3: hsl(216 92% 60%);
+            --chart-4: hsl(210 98% 78%);
+            --chart-5: hsl(212 97% 87%);
+        }
+        
+        .dark {
+            --background: hsl(220 15% 6%);
+            --foreground: hsl(220 9% 91%);
+            --card: hsl(220 13% 9%);
+            --card-foreground: hsl(220 9% 91%);
+            --popover: hsl(220 13% 9%);
+            --popover-foreground: hsl(220 9% 91%);
+            --primary: hsl(221 83% 53%);
+            --primary-foreground: hsl(210 40% 98%);
+            --secondary: hsl(220 13% 15%);
+            --secondary-foreground: hsl(220 9% 54%);
+            --muted: hsl(220 13% 15%);
+            --muted-foreground: hsl(220 9% 54%);
+            --accent: hsl(220 13% 15%);
+            --accent-foreground: hsl(220 9% 91%);
+            --destructive: hsl(0 84% 60%);
+            --destructive-foreground: hsl(210 40% 98%);
+            --border: hsl(220 13% 15%);
+            --input: hsl(220 13% 15%);
+            --ring: hsl(221 83% 53%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* RTL Support */
+        [dir="rtl"] {
+            direction: rtl;
+        }
+
+        [dir="rtl"] .sidebar {
+            right: 0;
+            left: auto;
+        }
+
+        [dir="rtl"] .main-content {
+            margin-right: 16rem;
+            margin-left: 0;
+        }
+
+        /* Mobile responsive sidebar */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-in-out;
+            }
+            
+            [dir="rtl"] .sidebar {
+                transform: translateX(100%);
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                margin-right: 0;
+            }
+        }
+
+        /* Loading states for low connectivity */
+        .loading {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background-size: 200px 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+    </style>
+</head>
+<body class="bg-background text-foreground">
+    <!-- @COMPONENT: Header -->
+    <header class="bg-card border-b border-border px-4 lg:px-6 h-16 flex items-center justify-between fixed top-0 left-0 right-0 z-50">
+        <div class="flex items-center gap-4">
+            <button class="lg:hidden p-2 hover:bg-accent rounded-md" onclick="toggleSidebar()" data-event="click:toggleSidebar">
+                <i class="fas fa-bars text-lg"></i>
+            </button>
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                    <i class="fas fa-gavel text-primary-foreground text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-semibold">NGO Procurement</h1>
+                    <p class="text-xs text-muted-foreground" data-bind="organization.name">Global Relief Foundation</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <!-- Language Toggle -->
+            <div class="flex items-center border border-border rounded-lg p-1">
+                <button class="px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm font-medium" onclick="toggleLanguage('en')" data-event="click:setLanguage">
+                    EN
+                </button>
+                <button class="px-3 py-1 text-muted-foreground rounded-md text-sm font-medium" onclick="toggleLanguage('ar')" data-event="click:setLanguage">
+                    العربية
+                </button>
+            </div>
+            
+            <!-- Notifications -->
+            <button class="p-2 hover:bg-accent rounded-lg relative" data-event="click:showNotifications">
+                <i class="fas fa-bell text-lg"></i>
+                <span class="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center" data-bind="notifications.unread">3</span>
+            </button>
+            
+            <!-- User Menu -->
+            <div class="flex items-center gap-3">
+                <div class="text-right">
+                    <p class="text-sm font-medium" data-bind="user.name">Sarah Johnson</p>
+                    <p class="text-xs text-muted-foreground" data-bind="user.role">Procurement Officer</p>
+                </div>
+                <div class="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
+                    <span class="text-sm font-medium" data-bind="user.initials">SJ</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: Header -->
+
+    <!-- @COMPONENT: Sidebar -->
+    <aside class="sidebar fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-card border-r border-border overflow-y-auto z-40">
+        <nav class="p-4 space-y-2">
+            <!-- Admin Navigation -->
+            <!-- @STATE: userRole:string = 'procurement_officer' -->
+            <div data-role="admin" class="hidden">
+                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Administration</h3>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent" data-nav="admin-dashboard">
+                    <i class="fas fa-tachometer-alt w-4"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent" data-nav="user-management">
+                    <i class="fas fa-users w-4"></i>
+                    <span>User Management</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent" data-nav="system-settings">
+                    <i class="fas fa-cogs w-4"></i>
+                    <span>System Settings</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent" data-nav="audit-logs">
+                    <i class="fas fa-clipboard-list w-4"></i>
+                    <span>Audit Logs</span>
+                </a>
+            </div>
+
+            <!-- Procurement Officer Navigation -->
+            <div data-role="procurement_officer">
+                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Procurement</h3>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg bg-accent font-medium" data-nav="dashboard">
+                    <i class="fas fa-home w-4"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent" data-nav="tenders">
+                    <i class="fas fa-file-contract w-4"></i>
+                    <span>Manage Tenders</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent" data-nav="create-tender">
+                    <i class="fas fa-plus-circle w-4"></i>
+                    <span>Create Tender</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent" data-nav="clarifications">
+                    <i class="fas fa-question-circle w-4"></i>
+                    <span>Clarifications</span>
+                    <span class="ml-auto bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full" data-bind="clarifications.pending">5</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent" data-nav="bid-evaluation">
+                    <i class="fas fa-balance-scale w-4"></i>
+                    <span>Bid Evaluation</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent" data-nav="reports">
+                    <i class="fas fa-chart-bar w-4"></i>
+                    <span>Reports</span>
+                </a>
+            </div>
+
+            <!-- Bidder Navigation -->
+            <div data-role="bidder" class="hidden">
+                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Bidding</h3>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent" data-nav="available-tenders">
+                    <i class="fas fa-list w-4"></i>
+                    <span>Available Tenders</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent" data-nav="my-bids">
+                    <i class="fas fa-file-signature w-4"></i>
+                    <span>My Bids</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent" data-nav="clarifications">
+                    <i class="fas fa-question-circle w-4"></i>
+                    <span>Ask Clarifications</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent" data-nav="profile">
+                    <i class="fas fa-user-circle w-4"></i>
+                    <span>Company Profile</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+    <!-- @END_COMPONENT: Sidebar -->
+
+    <!-- @COMPONENT: MainContent -->
+    <main class="main-content ml-64 pt-16 min-h-screen">
+        <!-- Dashboard Content -->
+        <div class="p-6 space-y-6">
+            <!-- Page Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold">Procurement Dashboard</h1>
+                    <p class="text-muted-foreground">Manage your organization's procurement activities</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="text-sm text-muted-foreground">
+                        <i class="fas fa-clock mr-1"></i>
+                        <span data-bind="currentTime">UTC+3 14:30</span>
+                    </div>
+                    <button class="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors" data-event="click:createTender">
+                        <i class="fas fa-plus mr-2"></i>
+                        Create New Tender
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-card border border-border rounded-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Active Tenders</p>
+                            <p class="text-2xl font-bold" data-bind="stats.activeTenders">12</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-contract text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center text-sm">
+                        <span class="text-green-600">+2</span>
+                        <span class="text-muted-foreground ml-1">from last month</span>
+                    </div>
+                </div>
+
+                <div class="bg-card border border-border rounded-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Total Bidders</p>
+                            <p class="text-2xl font-bold" data-bind="stats.totalBidders">847</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-users text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center text-sm">
+                        <span class="text-green-600">+15</span>
+                        <span class="text-muted-foreground ml-1">new this week</span>
+                    </div>
+                </div>
+
+                <div class="bg-card border border-border rounded-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Pending Clarifications</p>
+                            <p class="text-2xl font-bold" data-bind="stats.pendingClarifications">5</p>
+                        </div>
+                        <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-question-circle text-amber-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center text-sm">
+                        <span class="text-amber-600">Needs attention</span>
+                    </div>
+                </div>
+
+                <div class="bg-card border border-border rounded-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Completed Tenders</p>
+                            <p class="text-2xl font-bold" data-bind="stats.completedTenders">89</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-check-circle text-purple-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center text-sm">
+                        <span class="text-green-600">98.9%</span>
+                        <span class="text-muted-foreground ml-1">success rate</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Recent Tenders -->
+                <div class="lg:col-span-2 bg-card border border-border rounded-lg">
+                    <div class="p-6 border-b border-border">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-lg font-semibold">Recent Tenders</h2>
+                            <button class="text-sm text-primary hover:underline" data-event="click:viewAllTenders">
+                                View All
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <!-- @MAP: recentTenders.map(tender => ( -->
+                            <div class="flex items-center justify-between p-4 bg-secondary/50 rounded-lg" data-mock="true">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-file-contract text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium" data-bind="tender.title">Medical Supplies Procurement 2024</h4>
+                                        <p class="text-sm text-muted-foreground">
+                                            <span data-bind="tender.reference">REF-2024-001</span> • 
+                                            <span data-bind="tender.deadline">Deadline: Dec 15, 2024</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Active</span>
+                                    <button class="p-2 hover:bg-accent rounded-lg" data-event="click:viewTender">
+                                        <i class="fas fa-eye text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between p-4 bg-secondary/50 rounded-lg" data-mock="true">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-file-contract text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium" data-bind="tender.title">Construction Materials for Schools</h4>
+                                        <p class="text-sm text-muted-foreground">
+                                            <span data-bind="tender.reference">REF-2024-002</span> • 
+                                            <span data-bind="tender.deadline">Deadline: Dec 20, 2024</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Draft</span>
+                                    <button class="p-2 hover:bg-accent rounded-lg" data-event="click:editTender">
+                                        <i class="fas fa-edit text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between p-4 bg-secondary/50 rounded-lg" data-mock="true">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-file-contract text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium" data-bind="tender.title">IT Equipment and Software</h4>
+                                        <p class="text-sm text-muted-foreground">
+                                            <span data-bind="tender.reference">REF-2024-003</span> • 
+                                            <span data-bind="tender.deadline">Deadline: Jan 5, 2025</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded-full">Evaluation</span>
+                                    <button class="p-2 hover:bg-accent rounded-lg" data-event="click:evaluateBids">
+                                        <i class="fas fa-balance-scale text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- @END_MAP )) -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions & Notifications -->
+                <div class="space-y-6">
+                    <!-- Quick Actions -->
+                    <div class="bg-card border border-border rounded-lg p-6">
+                        <h2 class="text-lg font-semibold mb-4">Quick Actions</h2>
+                        <div class="space-y-3">
+                            <button class="w-full flex items-center gap-3 p-3 text-left hover:bg-accent rounded-lg transition-colors" data-event="click:createTender">
+                                <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-plus text-primary text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium">Create Tender</p>
+                                    <p class="text-xs text-muted-foreground">Start new procurement</p>
+                                </div>
+                            </button>
+                            
+                            <button class="w-full flex items-center gap-3 p-3 text-left hover:bg-accent rounded-lg transition-colors" data-event="click:reviewClarifications">
+                                <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-question-circle text-amber-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium">Review Clarifications</p>
+                                    <p class="text-xs text-muted-foreground">5 pending requests</p>
+                                </div>
+                            </button>
+                            
+                            <button class="w-full flex items-center gap-3 p-3 text-left hover:bg-accent rounded-lg transition-colors" data-event="click:generateReport">
+                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-chart-bar text-green-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium">Generate Report</p>
+                                    <p class="text-xs text-muted-foreground">Monthly summary</p>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="bg-card border border-border rounded-lg p-6">
+                        <h2 class="text-lg font-semibold mb-4">Recent Activity</h2>
+                        <div class="space-y-4">
+                            <!-- @MAP: recentActivity.map(activity => ( -->
+                            <div class="flex items-start gap-3" data-mock="true">
+                                <div class="w-2 h-2 bg-primary rounded-full mt-2"></div>
+                                <div class="flex-1">
+                                    <p class="text-sm" data-bind="activity.description">New bid submitted for Medical Supplies tender</p>
+                                    <p class="text-xs text-muted-foreground" data-bind="activity.time">2 hours ago</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start gap-3" data-mock="true">
+                                <div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                                <div class="flex-1">
+                                    <p class="text-sm" data-bind="activity.description">Clarification request answered</p>
+                                    <p class="text-xs text-muted-foreground" data-bind="activity.time">4 hours ago</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start gap-3" data-mock="true">
+                                <div class="w-2 h-2 bg-amber-500 rounded-full mt-2"></div>
+                                <div class="flex-1">
+                                    <p class="text-sm" data-bind="activity.description">Tender deadline extended</p>
+                                    <p class="text-xs text-muted-foreground" data-bind="activity.time">1 day ago</p>
+                                </div>
+                            </div>
+                            <!-- @END_MAP )) -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tender Detail Modal (Hidden by default) -->
+            <div id="tenderModal" class="fixed inset-0 bg-black/50 hidden z-50 p-4" data-implementation="Modal for tender details with document management">
+                <div class="bg-card rounded-lg max-w-4xl mx-auto mt-8 max-h-[90vh] overflow-y-auto">
+                    <div class="flex items-center justify-between p-6 border-b border-border">
+                        <h2 class="text-xl font-semibold">Tender Details</h2>
+                        <button onclick="closeTenderModal()" class="p-2 hover:bg-accent rounded-lg">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="p-6 space-y-6">
+                        <!-- Tender Information -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="font-semibold mb-4">Basic Information</h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="text-sm text-muted-foreground">Reference Number</label>
+                                        <p class="font-medium" data-bind="tender.reference">REF-2024-001</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm text-muted-foreground">Title</label>
+                                        <p class="font-medium" data-bind="tender.title">Medical Supplies Procurement 2024</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm text-muted-foreground">Status</label>
+                                        <span class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full mt-1">Active</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 class="font-semibold mb-4">Timeline</h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="text-sm text-muted-foreground">Publication Date</label>
+                                        <p class="font-medium" data-bind="tender.publishDate">Nov 15, 2024</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm text-muted-foreground">Submission Deadline</label>
+                                        <p class="font-medium" data-bind="tender.deadline">Dec 15, 2024 at 14:00 UTC+3</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm text-muted-foreground">Opening Date</label>
+                                        <p class="font-medium" data-bind="tender.openingDate">Dec 16, 2024 at 10:00 UTC+3</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Document Management (e-Distribution) -->
+                        <div>
+                            <h3 class="font-semibold mb-4">Documents (e-Distribution)</h3>
+                            <div class="border border-border rounded-lg">
+                                <div class="p-4 border-b border-border bg-muted/50">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-medium">Tender Documents</span>
+                                        <button class="bg-primary text-primary-foreground px-3 py-1 rounded text-sm" data-event="click:uploadDocument">
+                                            <i class="fas fa-upload mr-1"></i>
+                                            Upload
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="divide-y divide-border">
+                                    <div class="p-4 flex items-center justify-between" data-mock="true">
+                                        <div class="flex items-center gap-3">
+                                            <i class="fas fa-file-pdf text-red-500"></i>
+                                            <div>
+                                                <p class="font-medium">Technical Specifications.pdf</p>
+                                                <p class="text-sm text-muted-foreground">2.4 MB • Downloaded 47 times</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <button class="p-2 hover:bg-accent rounded" data-event="click:downloadDocument">
+                                                <i class="fas fa-download text-sm"></i>
+                                            </button>
+                                            <button class="p-2 hover:bg-accent rounded" data-event="click:removeDocument">
+                                                <i class="fas fa-trash text-sm text-destructive"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="p-4 flex items-center justify-between" data-mock="true">
+                                        <div class="flex items-center gap-3">
+                                            <i class="fas fa-file-excel text-green-500"></i>
+                                            <div>
+                                                <p class="font-medium">Bill of Quantities.xlsx</p>
+                                                <p class="text-sm text-muted-foreground">1.2 MB • Downloaded 32 times</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <button class="p-2 hover:bg-accent rounded" data-event="click:downloadDocument">
+                                                <i class="fas fa-download text-sm"></i>
+                                            </button>
+                                            <button class="p-2 hover:bg-accent rounded" data-event="click:removeDocument">
+                                                <i class="fas fa-trash text-sm text-destructive"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Clarifications (e-Clarifications) -->
+                        <div>
+                            <h3 class="font-semibold mb-4">Clarifications (e-Clarifications)</h3>
+                            <div class="space-y-4">
+                                <!-- @MAP: clarifications.map(clarification => ( -->
+                                <div class="border border-border rounded-lg p-4" data-mock="true">
+                                    <div class="flex items-start justify-between mb-3">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
+                                                <span class="text-sm font-medium">AB</span>
+                                            </div>
+                                            <div>
+                                                <p class="font-medium" data-bind="clarification.company">ABC Construction Ltd.</p>
+                                                <p class="text-sm text-muted-foreground" data-bind="clarification.timestamp">Dec 10, 2024 at 09:30</p>
+                                            </div>
+                                        </div>
+                                        <span class="px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded-full">Pending</span>
+                                    </div>
+                                    <div class="bg-muted/50 rounded p-3 mb-3">
+                                        <p class="text-sm" data-bind="clarification.question">Can you provide more details about the delivery timeline requirements? Specifically, whether partial deliveries are acceptable?</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button class="bg-primary text-primary-foreground px-3 py-1 rounded text-sm" data-event="click:respondToClarification">
+                                            Respond
+                                        </button>
+                                        <button class="text-muted-foreground hover:text-foreground text-sm" data-event="click:markAsAnswered">
+                                            Mark as Answered
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP )) -->
+                            </div>
+                        </div>
+
+                        <!-- Bids Overview (e-Opening) -->
+                        <div>
+                            <h3 class="font-semibold mb-4">Submitted Bids (e-Opening)</h3>
+                            <div class="border border-border rounded-lg">
+                                <div class="p-4 border-b border-border bg-muted/50">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-medium">Bid Status</span>
+                                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <i class="fas fa-lock mr-1"></i>
+                                            <span>Sealed until opening: Dec 16, 2024</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                                        <div>
+                                            <p class="text-2xl font-bold text-primary" data-bind="bids.submitted">7</p>
+                                            <p class="text-sm text-muted-foreground">Bids Submitted</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-2xl font-bold text-amber-600" data-bind="bids.pending">2</p>
+                                            <p class="text-sm text-muted-foreground">Pending Review</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-2xl font-bold text-green-600" data-bind="bids.validated">5</p>
+                                            <p class="text-sm text-muted-foreground">Validated Bids</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 pt-4 border-t border-border">
+                                        <button class="w-full bg-primary text-primary-foreground py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled data-implementation="Enable after deadline">
+                                            <i class="fas fa-unlock mr-2"></i>
+                                            Open Bids (Available Dec 16, 2024)
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- @END_COMPONENT: MainContent -->
+
+    <!-- Mobile Overlay -->
+    <div id="mobileOverlay" class="lg:hidden fixed inset-0 bg-black/50 hidden z-30" onclick="closeSidebar()"></div>
+
+    <script>
+        // TODO: Implement proper React state management and API integration
+        
+        (function() {
+            // Sidebar toggle for mobile
+            window.toggleSidebar = function() {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.getElementById('mobileOverlay');
+                
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('hidden');
+            };
+
+            window.closeSidebar = function() {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.getElementById('mobileOverlay');
+                
+                sidebar.classList.remove('open');
+                overlay.classList.add('hidden');
+            };
+
+            // Language toggle
+            window.toggleLanguage = function(lang) {
+                const html = document.documentElement;
+                const buttons = document.querySelectorAll('[onclick*="toggleLanguage"]');
+                
+                if (lang === 'ar') {
+                    html.setAttribute('dir', 'rtl');
+                    html.setAttribute('lang', 'ar');
+                    // Update button states
+                    buttons.forEach(btn => {
+                        if (btn.textContent.includes('العربية')) {
+                            btn.classList.add('bg-primary', 'text-primary-foreground');
+                            btn.classList.remove('text-muted-foreground');
+                        } else {
+                            btn.classList.remove('bg-primary', 'text-primary-foreground');
+                            btn.classList.add('text-muted-foreground');
+                        }
+                    });
+                } else {
+                    html.setAttribute('dir', 'ltr');
+                    html.setAttribute('lang', 'en');
+                    // Update button states
+                    buttons.forEach(btn => {
+                        if (btn.textContent.includes('EN')) {
+                            btn.classList.add('bg-primary', 'text-primary-foreground');
+                            btn.classList.remove('text-muted-foreground');
+                        } else {
+                            btn.classList.remove('bg-primary', 'text-primary-foreground');
+                            btn.classList.add('text-muted-foreground');
+                        }
+                    });
+                }
+                
+                // TODO: Load language-specific content from API
+            };
+
+            // Tender modal controls
+            window.showTenderModal = function() {
+                document.getElementById('tenderModal').classList.remove('hidden');
+            };
+
+            window.closeTenderModal = function() {
+                document.getElementById('tenderModal').classList.add('hidden');
+            };
+
+            // Mock real-time clock
+            function updateClock() {
+                const timeElements = document.querySelectorAll('[data-bind="currentTime"]');
+                const now = new Date();
+                const timeString = `UTC+3 ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                
+                timeElements.forEach(el => {
+                    el.textContent = timeString;
+                });
+            }
+
+            // Update clock every minute
+            updateClock();
+            setInterval(updateClock, 60000);
+
+            // Simulate loading states for slow connections
+            function simulateLoading() {
+                const cards = document.querySelectorAll('.bg-card');
+                cards.forEach(card => {
+                    card.classList.add('loading');
+                    setTimeout(() => {
+                        card.classList.remove('loading');
+                    }, Math.random() * 2000 + 500);
+                });
+            }
+
+            // Role switching demo (for testing different user perspectives)
+            window.switchRole = function(role) {
+                const roleElements = document.querySelectorAll('[data-role]');
+                roleElements.forEach(el => {
+                    if (el.dataset.role === role) {
+                        el.classList.remove('hidden');
+                    } else {
+                        el.classList.add('hidden');
+                    }
+                });
+            };
+
+            // Event delegation for demo interactions
+            document.addEventListener('click', function(e) {
+                const button = e.target.closest('button');
+                if (!button) return;
+
+                // Demo tender modal
+                if (button.dataset.event && button.dataset.event.includes('viewTender')) {
+                    showTenderModal();
+                }
+
+                // Demo loading states
+                if (button.classList.contains('bg-primary')) {
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Loading...';
+                    setTimeout(() => {
+                        button.innerHTML = button.getAttribute('data-original-text') || button.innerHTML.replace('<i class="fas fa-spinner fa-spin mr-2"></i>Loading...', 'Action Complete');
+                    }, 2000);
+                }
+            });
+
+            // Initialize demo data
+            console.log('NGO E-Procurement System initialized');
+            console.log('Features: e-Distribution, e-Clarifications, e-Opening');
+            console.log('Supported roles: Admin, Procurement Officer, Bidder');
+        })();
+    </script>
+</body>
+</html>

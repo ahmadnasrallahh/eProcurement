@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/components/language-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { formatInTimezone } from "@/lib/timezone";
-import { File, Eye, Edit, Download, Calendar, DollarSign, Building2 } from "lucide-react";
+import { File, Eye, Edit, Download, Calendar, DollarSign, Building2, Scale } from "lucide-react";
+
 
 interface TenderCardProps {
   tender: any;
@@ -37,7 +38,7 @@ export function TenderCard({ tender, userRole, canEdit, onView, onEdit }: Tender
       completed: t('tender.status.completed', 'Completed'),
       cancelled: t('tender.status.cancelled', 'Cancelled'),
     };
-    return statusMap[status] || status;
+    return statusMap[status as keyof typeof statusMap] || status;
   };
 
   const isDeadlineApproaching = () => {
@@ -151,7 +152,7 @@ export function TenderCard({ tender, userRole, canEdit, onView, onEdit }: Tender
                 <Button 
                   size="sm" 
                   className="h-8"
-                  onClick={onView}
+                  onClick={() => (window.location.href = `/tenders/${tender.id}/submit`)}
                   data-testid={`button-bid-${tender.id}`}
                 >
                   {t('tender.submitBid', 'Submit Bid')}
@@ -161,22 +162,24 @@ export function TenderCard({ tender, userRole, canEdit, onView, onEdit }: Tender
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-8 w-8 p-0"
+                className="h-8"
                 onClick={onView}
                 data-testid={`button-view-${tender.id}`}
               >
-                <Eye className="w-4 h-4" />
+                <Eye className="w-4 h-4 mr-2" />
+                {t('common.view', 'View')}
               </Button>
 
               {canEdit && (
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="h-8 w-8 p-0"
+                  className="h-8"
                   onClick={onEdit}
                   data-testid={`button-edit-${tender.id}`}
                 >
-                  <Edit className="w-4 h-4" />
+                  <Edit className="w-4 h-4 mr-2" />
+                  {t('common.update', 'Update')}
                 </Button>
               )}
 

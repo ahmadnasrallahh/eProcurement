@@ -1,7 +1,7 @@
 export const translations = {
   en: {
     app: {
-      title: "NGO Procurement",
+      title: "NABNI eProcurement",
       defaultOrg: "Global Relief Foundation",
     },
     auth: {

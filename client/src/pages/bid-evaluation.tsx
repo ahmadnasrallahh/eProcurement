@@ -27,6 +27,7 @@ import {
   XCircle,
   Clock
 } from "lucide-react";
+import { useEffect, useState as useLocalState } from "react";
 
 export default function BidEvaluation() {
   const { tenderId } = useParams();
@@ -64,6 +65,12 @@ export default function BidEvaluation() {
       return res.json();
     },
   });
+
+  const fetchBidDocuments = async (bidId: string) => {
+    const res = await fetch(`/api/bids/${bidId}/documents`, { credentials: "include" });
+    if (!res.ok) throw new Error("Failed to fetch bid documents");
+    return res.json();
+  };
 
   const updateBidMutation = useMutation({
     mutationFn: async (data: { bidId: string; updates: any }) => {
@@ -319,6 +326,12 @@ export default function BidEvaluation() {
                     </div>
                   )}
 
+                  {/* Bid Documents */}
+                  <div>
+                    <p className="text-sm font-medium mb-2">{t('bid.documents', 'Documents')}</p>
+                    <BidDocuments bidId={bid.id} />
+                  </div>
+
                   {/* Evaluation Notes */}
                   {bid.evaluationNotes && (
                     <div>
@@ -472,5 +485,69 @@ export default function BidEvaluation() {
         )}
       </div>
     </MainLayout>
+  );
+}
+
+function BidDocuments({ bidId }: { bidId: string }) {
+  const { t } = useLanguage();
+  const [docs, setDocs] = useLocalState<any[]>([]);
+  const [loading, setLoading] = useLocalState<boolean>(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/bids/${bidId}/documents`, { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) setDocs(data);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bidId]);
+
+  if (loading) {
+    return <p className="text-sm text-muted-foreground">{t('common.loading', 'Loading...')}</p>;
+  }
+
+  if (!docs || docs.length === 0) {
+    return <p className="text-sm text-muted-foreground">{t('bid.noDocuments', 'No documents uploaded')}</p>;
+  }
+
+  return (
+    <div className="grid gap-2">
+      {docs.map((d: any) => (
+        <div key={d.id} className="flex items-center justify-between p-2 bg-secondary/20 rounded">
+          <div className="text-sm">
+            <p className="font-medium">{d.originalName}</p>
+            <p className="text-xs text-muted-foreground">{(d.fileSize / 1024 / 1024).toFixed(2)} MB</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              const res = await fetch(`/api/bids/${bidId}/documents/${d.id}/download`, { credentials: "include" });
+              if (!res.ok) return;
+              const blob = await res.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = d.originalName || 'document';
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.URL.revokeObjectURL(url);
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" /> {t('common.download', 'Download')}
+          </Button>
+        </div>
+      ))}
+    </div>
   );
 }

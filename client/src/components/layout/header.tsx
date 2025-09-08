@@ -37,7 +37,7 @@ export function Header({ onSidebarToggle }: HeaderProps) {
       procurement_officer: t('roles.procurementOfficer', 'Procurement Officer'),
       bidder: t('roles.bidder', 'Bidder'),
     };
-    return roleMap[role] || role;
+    return roleMap[role as keyof typeof roleMap] || role;
   };
 
   const getInitials = (name: string) => {
@@ -50,7 +50,7 @@ export function Header({ onSidebarToggle }: HeaderProps) {
   };
 
   return (
-    <header className="bg-card border-b border-border px-4 lg:px-6 h-16 flex items-center justify-between fixed top-0 left-0 right-0 z-50">
+    <header className="bg-card border-b border-border px-4 lg:px-6 h-16 flex items-center justify-between fixed top-0 left-0 right-0 z-50 shadow-sm">
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
@@ -63,12 +63,10 @@ export function Header({ onSidebarToggle }: HeaderProps) {
         </Button>
         
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Gavel className="w-5 h-5 text-primary-foreground" />
-          </div>
+          <img src="/logo.png" alt="Logo" className="h-8 w-auto" />
           <div>
             <h1 className="text-lg font-semibold" data-testid="app-title">
-              {t('app.title', 'NGO Procurement')}
+              {t('app.title', 'NABNI eProcurement')}
             </h1>
             <p className="text-xs text-muted-foreground" data-testid="organization-name">
               {user?.organizationName || t('app.defaultOrg', 'Global Relief Foundation')}

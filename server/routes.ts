@@ -324,6 +324,52 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Bid documents listing
+  app.get('/api/bids/:id/documents', requireRole(['admin', 'procurement_officer']), async (req, res) => {
+    try {
+      const docs = await storage.getBidDocuments(req.params.id);
+      res.json(docs);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch bid documents' });
+    }
+  });
+
+  // Bid document download
+  app.get('/api/bids/:bidId/documents/:docId/download', requireRole(['admin', 'procurement_officer']), async (req, res) => {
+    try {
+      const bid = await storage.getBid(req.params.bidId);
+      if (!bid) {
+        return res.status(404).json({ message: 'Bid not found' });
+      }
+
+      const documents = bid.documents ? JSON.parse(JSON.stringify(bid.documents)) : [];
+      const document = documents.find((d: any) => d.id === req.params.docId);
+      if (!document) {
+        return res.status(404).json({ message: 'Document not found' });
+      }
+
+      const filePath = path.join('uploads', document.fileName);
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: 'File not found on disk' });
+      }
+
+      // Log audit
+      await storage.createAuditLog({
+        userId: (req as any).user.id,
+        action: 'DOWNLOAD_BID_DOCUMENT',
+        resourceType: 'bid_document',
+        resourceId: req.params.docId,
+        details: { bidId: req.params.bidId, fileName: document.originalName },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.download(filePath, document.originalName);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to download bid document' });
+    }
+  });
+
   // Clarification routes (e-Clarifications)
   app.get('/api/clarifications', requireAuth, async (req, res) => {
     try {

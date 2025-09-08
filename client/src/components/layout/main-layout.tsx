@@ -37,7 +37,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       <Header onSidebarToggle={toggleSidebar} />
       <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
       
-      <main className="main-content p-6" data-testid="main-content">
+      <main className="main-content p-6 pt-20" data-testid="main-content">
         {children}
       </main>
     </div>

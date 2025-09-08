@@ -15,6 +15,11 @@ import Reports from "@/pages/reports";
 import Clarifications from "@/pages/clarifications";
 import UserManagement from "@/pages/user-management";
 import { ProtectedRoute } from "./lib/protected-route";
+import SubmitBid from "./pages/submit-bid";
+import MyBids from "./pages/my-bids";
+import BidEvaluationList from "@/pages/bid-evaluation-list";
+import TenderView from "./pages/tender-view";
+import EditTender from "./pages/edit-tender";
 
 function Router() {
   return (
@@ -23,6 +28,11 @@ function Router() {
       <ProtectedRoute path="/tenders" component={Tenders} />
       <ProtectedRoute path="/create-tender" component={CreateTender} />
       <ProtectedRoute path="/tenders/:tenderId/evaluate" component={BidEvaluation} />
+      <ProtectedRoute path="/tenders/:tenderId/submit" component={SubmitBid} />
+      <ProtectedRoute path="/tenders/:tenderId" component={TenderView} />
+      <ProtectedRoute path="/tenders/:tenderId/edit" component={EditTender} />
+      <ProtectedRoute path="/my-bids" component={MyBids} />
+      <ProtectedRoute path="/evaluation" component={BidEvaluationList} />
       <ProtectedRoute path="/reports" component={Reports} />
       <ProtectedRoute path="/clarifications" component={Clarifications} />
       <ProtectedRoute path="/users" component={UserManagement} />
