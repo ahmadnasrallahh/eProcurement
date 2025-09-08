@@ -281,7 +281,7 @@ export const translations = {
   },
   ar: {
     app: {
-      title: "المشتريات للمنظمات غير الحكومية",
+      title: "نظام نبني الالكتروني للمشتريات",
       defaultOrg: "مؤسسة الإغاثة العالمية",
     },
     auth: {
