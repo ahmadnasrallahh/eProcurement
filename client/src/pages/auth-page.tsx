@@ -42,7 +42,7 @@ export default function AuthPage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
-            <img src="/public/logo.png" alt="NABNI" className="h-15 mx-auto mb-4" />
+            <img src="/logo.png" alt="NABNI" className="h-15 mx-auto mb-4" />
             <h1 className="text-2xl font-bold">NABNI eProcurement</h1>
           </div>
 
