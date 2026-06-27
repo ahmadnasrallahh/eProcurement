@@ -14,8 +14,10 @@ server/public/
 *.sqlite
 *.sqlite3
 uploads/
+attached_assets/
 .local/
 .replit
+replit.md
 replit.nix
 
 # Tool and OS state
