@@ -18,17 +18,18 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
+import type { DashboardStats } from "@/lib/api-types";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [, setLocation] = useLocation();
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
   });
 
-  const { data: tenders, isLoading: tendersLoading } = useQuery({
+  const { data: tenders, isLoading: tendersLoading } = useQuery<any[]>({
     queryKey: ["/api/tenders"],
   });
 
@@ -46,7 +47,7 @@ export default function Dashboard() {
   };
 
   const getStatusText = (status: string) => {
-    const statusMap = {
+    const statusMap: Record<string, string> = {
       active: t('tender.status.active', 'Active'),
       draft: t('tender.status.draft', 'Draft'),
       evaluation: t('tender.status.evaluation', 'Evaluation'),

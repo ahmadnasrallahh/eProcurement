@@ -1,7 +1,7 @@
 import { users, tenders, bids, clarifications, auditLogs, tenderDocuments, type User, type InsertUser, type Tender, type InsertTender, type Bid, type InsertBid, type Clarification, type InsertClarification, type TenderDocument } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, like, asc } from "drizzle-orm";
-import session from "express-session";
+import session, { type Store } from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 
@@ -21,7 +21,7 @@ export interface IStorage {
   getTenderByReference(referenceNumber: string): Promise<Tender | undefined>;
   createTender(tender: InsertTender): Promise<Tender>;
   updateTender(id: string, updates: Partial<Tender>): Promise<Tender | undefined>;
-  getTenders(filters?: { status?: string; createdById?: string }): Promise<Tender[]>;
+  getTenders(filters?: { status?: Tender['status']; createdById?: string }): Promise<Tender[]>;
 
   // Bid management
   getBid(id: string): Promise<Bid | undefined>;
@@ -38,7 +38,7 @@ export interface IStorage {
   getPendingClarifications(): Promise<Clarification[]>;
 
   // Document management
-  createTenderDocument(document: Omit<TenderDocument, 'id' | 'createdAt'>): Promise<TenderDocument>;
+  createTenderDocument(document: Omit<typeof tenderDocuments.$inferInsert, 'id' | 'createdAt'>): Promise<TenderDocument>;
   getTenderDocument(id: string): Promise<TenderDocument | undefined>;
   getTenderDocuments(tenderId: string): Promise<TenderDocument[]>;
   updateDocumentDownloadCount(id: string): Promise<void>;
@@ -52,11 +52,11 @@ export interface IStorage {
   createAuditLog(log: Omit<typeof auditLogs.$inferInsert, 'id' | 'createdAt'>): Promise<void>;
 
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: Store;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: Store;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({
@@ -133,8 +133,8 @@ export class DatabaseStorage implements IStorage {
     return tender || undefined;
   }
 
-  async getTenders(filters?: { status?: string; createdById?: string }): Promise<Tender[]> {
-    let query = db.select().from(tenders);
+  async getTenders(filters?: { status?: Tender['status']; createdById?: string }): Promise<Tender[]> {
+    let query = db.select().from(tenders).$dynamic();
 
     if (filters?.status) {
       query = query.where(eq(tenders.status, filters.status));
@@ -207,7 +207,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(clarifications).where(eq(clarifications.status, 'pending')).orderBy(asc(clarifications.createdAt));
   }
 
-  async createTenderDocument(document: Omit<TenderDocument, 'id' | 'createdAt'>): Promise<TenderDocument> {
+  async createTenderDocument(document: Omit<typeof tenderDocuments.$inferInsert, 'id' | 'createdAt'>): Promise<TenderDocument> {
     const [doc] = await db
       .insert(tenderDocuments)
       .values(document)
@@ -236,7 +236,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTenderDocument(id: string): Promise<boolean> {
     const result = await db.delete(tenderDocuments).where(eq(tenderDocuments.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async createAuditLog(log: Omit<typeof auditLogs.$inferInsert, 'id' | 'createdAt'>): Promise<void> {

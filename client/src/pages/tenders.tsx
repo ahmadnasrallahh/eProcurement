@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/components/language-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Search, Filter, Calendar, DollarSign, MapPin, Clock, FileText, Users, Gavel, ArrowLeft, Download } from "lucide-react";
+import { Plus, Search, Filter, Calendar, DollarSign, MapPin, Clock, File, FileText, Users, Gavel, ArrowLeft, Download } from "lucide-react";
 
 export default function Tenders() {
   const { user } = useAuth();
@@ -24,7 +24,7 @@ export default function Tenders() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: tenders, isLoading, error } = useQuery({
+  const { data: tenders, isLoading, error } = useQuery<any[]>({
     queryKey: ["/api/tenders"],
   });
 
@@ -47,7 +47,7 @@ export default function Tenders() {
   };
 
   const getStatusText = (status: string) => {
-    const statusMap = {
+    const statusMap: Record<string, string> = {
       active: t('tender.status.active', 'Active'),
       draft: t('tender.status.draft', 'Draft'),
       evaluation: t('tender.status.evaluation', 'Evaluation'),

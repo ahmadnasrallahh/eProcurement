@@ -36,6 +36,7 @@ import {
   PieChart as PieChartIcon,
   FileBarChart
 } from "lucide-react";
+import type { DashboardStats } from "@/lib/api-types";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -49,12 +50,12 @@ export default function Reports() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   // Fetch dashboard statistics
-  const { data: stats } = useQuery({
+  const { data: stats } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
   });
 
   // Fetch tenders for analysis
-  const { data: tenders } = useQuery({
+  const { data: tenders } = useQuery<any[]>({
     queryKey: ["/api/tenders"],
   });
 

@@ -28,35 +28,60 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-async function createDefaultAdmin() {
+export function sanitizeUser(user: SelectUser) {
+  const { password: _password, ...safeUser } = user;
+  return safeUser;
+}
+
+async function createBootstrapAdmin() {
+  const username = process.env.BOOTSTRAP_ADMIN_USERNAME;
+  const email = process.env.BOOTSTRAP_ADMIN_EMAIL;
+  const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+
+  if (!username && !email && !password) {
+    return;
+  }
+
+  if (!username || !email || !password) {
+    throw new Error(
+      "BOOTSTRAP_ADMIN_USERNAME, BOOTSTRAP_ADMIN_EMAIL, and BOOTSTRAP_ADMIN_PASSWORD must be set together.",
+    );
+  }
+
+  if (password.length < 12) {
+    throw new Error("BOOTSTRAP_ADMIN_PASSWORD must be at least 12 characters.");
+  }
+
   try {
-    // Check if admin already exists
-    const adminUser = await storage.getUserByUsername('admin');
+    const adminUser = await storage.getUserByUsername(username);
     if (!adminUser) {
-      // Create default admin user
-      const defaultAdmin = {
-        username: 'admin',
-        email: 'admin@system.local',
-        password: await hashPassword('admin123'),
-        role: 'admin',
+      const bootstrapAdmin = {
+        username,
+        email,
+        password: await hashPassword(password),
+        role: 'admin' as const,
         organizationName: 'System Administration',
         contactPerson: 'System Administrator',
-        phoneNumber: '+1-000-000-0000',
         address: 'System',
         isActive: true
       };
       
-      await storage.createUser(defaultAdmin);
-      console.log('Default admin user created - Username: admin, Password: admin123');
+      await storage.createUser(bootstrapAdmin);
+      console.log(`Bootstrap administrator created for ${username}. Remove its password from the environment.`);
     }
   } catch (error) {
-    console.error('Error creating default admin user:', error);
+    console.error('Error creating bootstrap administrator:', error);
   }
 }
 
 export function setupAuth(app: Express) {
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret || sessionSecret.length < 32) {
+    throw new Error("SESSION_SECRET must be set and contain at least 32 characters.");
+  }
+
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET!,
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
@@ -67,8 +92,7 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Create default admin user on startup
-  createDefaultAdmin();
+  createBootstrapAdmin();
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
@@ -83,14 +107,15 @@ export function setupAuth(app: Express) {
 
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: number, done) => {
-    const user = await storage.getUser(id);
+    const user = await storage.getUser(String(id));
     done(null, user);
   });
 
   
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
+    if (!req.user) return res.sendStatus(401);
+    res.status(200).json(sanitizeUser(req.user));
   });
 
   app.post("/api/logout", (req, res, next) => {
@@ -101,7 +126,8 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    res.json(req.user);
+    const user = req.user;
+    if (!req.isAuthenticated() || !user) return res.sendStatus(401);
+    res.json(sanitizeUser(user));
   });
 }

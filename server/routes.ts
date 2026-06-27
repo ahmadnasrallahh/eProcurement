@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
+import { sanitizeUser, setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertTenderSchema, insertBidSchema, insertClarificationSchema } from "@shared/schema";
 import multer from "multer";
@@ -10,6 +10,10 @@ import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 
 const scryptAsync = promisify(scrypt);
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Unknown error";
+}
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -51,7 +55,7 @@ function requireRole(roles: string[]) {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: 'Authentication required' });
     }
-    if (!roles.includes(req.user.role)) {
+    if (!roles.includes(req.user!.role)) {
       return res.status(403).json({ message: 'Insufficient permissions' });
     }
     next();
@@ -67,9 +71,9 @@ export function registerRoutes(app: Express): Server {
     try {
       const filters: any = {};
       
-      if (req.user.role === 'procurement_officer') {
-        filters.createdById = req.user.id;
-      } else if (req.user.role === 'bidder') {
+      if (req.user!.role === 'procurement_officer') {
+        filters.createdById = req.user!.id;
+      } else if (req.user!.role === 'bidder') {
         filters.status = 'active';
       }
       
@@ -88,7 +92,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Check permissions
-      if (req.user.role === 'procurement_officer' && tender.createdById !== req.user.id) {
+      if (req.user!.role === 'procurement_officer' && tender.createdById !== req.user!.id) {
         return res.status(403).json({ message: 'Access denied' });
       }
       
@@ -102,14 +106,14 @@ export function registerRoutes(app: Express): Server {
     try {
       const validatedData = insertTenderSchema.parse({
         ...req.body,
-        createdById: req.user.id,
+        createdById: req.user!.id,
       });
       
       const tender = await storage.createTender(validatedData);
       
       // Log audit
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: 'CREATE_TENDER',
         resourceType: 'tender',
         resourceId: tender.id,
@@ -120,7 +124,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(tender);
     } catch (error) {
-      res.status(400).json({ message: 'Invalid tender data', error: error.message });
+      res.status(400).json({ message: 'Invalid tender data', error: getErrorMessage(error) });
     }
   });
 
@@ -131,7 +135,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: 'Tender not found' });
       }
       
-      if (req.user.role === 'procurement_officer' && tender.createdById !== req.user.id) {
+      if (req.user!.role === 'procurement_officer' && tender.createdById !== req.user!.id) {
         return res.status(403).json({ message: 'Access denied' });
       }
       
@@ -139,7 +143,7 @@ export function registerRoutes(app: Express): Server {
       
       // Log audit
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: 'UPDATE_TENDER',
         resourceType: 'tender',
         resourceId: req.params.id,
@@ -176,7 +180,7 @@ export function registerRoutes(app: Express): Server {
         originalName: req.file.originalname,
         fileSize: req.file.size,
         mimeType: req.file.mimetype,
-        uploadedById: req.user.id,
+        uploadedById: req.user!.id,
       });
       
       res.status(201).json(document);
@@ -202,7 +206,7 @@ export function registerRoutes(app: Express): Server {
       
       // Log audit
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: 'DOWNLOAD_DOCUMENT',
         resourceType: 'document',
         resourceId: req.params.id,
@@ -232,14 +236,14 @@ export function registerRoutes(app: Express): Server {
       const validatedData = insertBidSchema.parse({
         ...req.body,
         tenderId: req.params.id,
-        bidderId: req.user.id,
+        bidderId: req.user!.id,
       });
       
       const bid = await storage.createBid(validatedData);
       
       // Log audit
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: 'SUBMIT_BID',
         resourceType: 'bid',
         resourceId: bid.id,
@@ -250,13 +254,13 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(bid);
     } catch (error) {
-      res.status(400).json({ message: 'Invalid bid data', error: error.message });
+      res.status(400).json({ message: 'Invalid bid data', error: getErrorMessage(error) });
     }
   });
 
   app.get('/api/my-bids', requireRole(['bidder']), async (req, res) => {
     try {
-      const bids = await storage.getBidsByBidder(req.user.id);
+      const bids = await storage.getBidsByBidder(req.user!.id);
       res.json(bids);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch bids' });
@@ -271,9 +275,9 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Check permissions - procurement officer can only evaluate their own tender's bids
-      if (req.user.role === 'procurement_officer') {
-        const tender = await storage.getTender(bid.tenderId);
-        if (!tender || tender.createdById !== req.user.id) {
+      if (req.user!.role === 'procurement_officer') {
+        const tender = bid.tenderId ? await storage.getTender(bid.tenderId) : undefined;
+        if (!tender || tender.createdById !== req.user!.id) {
           return res.status(403).json({ message: 'Access denied' });
         }
       }
@@ -282,7 +286,7 @@ export function registerRoutes(app: Express): Server {
       
       // Log audit
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: 'EVALUATE_BID',
         resourceType: 'bid',
         resourceId: req.params.id,
@@ -305,7 +309,7 @@ export function registerRoutes(app: Express): Server {
       
       // Verify bid belongs to the bidder
       const bid = await storage.getBid(req.params.id);
-      if (!bid || bid.bidderId !== req.user.id) {
+      if (!bid || bid.bidderId !== req.user!.id) {
         return res.status(403).json({ message: 'Access denied' });
       }
       
@@ -315,7 +319,7 @@ export function registerRoutes(app: Express): Server {
         originalName: req.file.originalname,
         fileSize: req.file.size,
         mimeType: req.file.mimetype,
-        uploadedById: req.user.id,
+        uploadedById: req.user!.id,
       });
       
       res.status(201).json(document);
@@ -373,7 +377,7 @@ export function registerRoutes(app: Express): Server {
   // Clarification routes (e-Clarifications)
   app.get('/api/clarifications', requireAuth, async (req, res) => {
     try {
-      const clarifications = req.user.role === 'procurement_officer' 
+      const clarifications = req.user!.role === 'procurement_officer'
         ? await storage.getPendingClarifications()
         : await storage.getClarificationsByTender(req.query.tenderId as string);
       res.json(clarifications);
@@ -386,14 +390,14 @@ export function registerRoutes(app: Express): Server {
     try {
       const validatedData = insertClarificationSchema.parse({
         ...req.body,
-        requesterId: req.user.id,
+        requesterId: req.user!.id,
       });
       
       const clarification = await storage.createClarification(validatedData);
       
       // Log audit
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: 'CREATE_CLARIFICATION',
         resourceType: 'clarification',
         resourceId: clarification.id,
@@ -404,7 +408,7 @@ export function registerRoutes(app: Express): Server {
       
       res.status(201).json(clarification);
     } catch (error) {
-      res.status(400).json({ message: 'Invalid clarification data', error: error.message });
+      res.status(400).json({ message: 'Invalid clarification data', error: getErrorMessage(error) });
     }
   });
 
@@ -412,13 +416,13 @@ export function registerRoutes(app: Express): Server {
     try {
       const clarification = await storage.updateClarification(req.params.id, {
         ...req.body,
-        answeredById: req.user.id,
+        answeredById: req.user!.id,
         answeredAt: new Date(),
       });
       
       // Log audit
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: 'ANSWER_CLARIFICATION',
         resourceType: 'clarification',
         resourceId: req.params.id,
@@ -437,7 +441,7 @@ export function registerRoutes(app: Express): Server {
   app.get('/api/users', requireRole(['admin']), async (req, res) => {
     try {
       const users = await storage.getAllUsers();
-      res.json(users);
+      res.json(users.map(sanitizeUser));
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch users' });
     }
@@ -457,7 +461,7 @@ export function registerRoutes(app: Express): Server {
 
       // Log audit
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: 'CREATE_USER',
         resourceType: 'user',
         resourceId: user.id,
@@ -466,31 +470,38 @@ export function registerRoutes(app: Express): Server {
         userAgent: req.get('User-Agent'),
       });
 
-      res.status(201).json(user);
+      res.status(201).json(sanitizeUser(user));
     } catch (error) {
-      res.status(400).json({ message: 'Failed to create user', error: error.message });
+      res.status(400).json({ message: 'Failed to create user', error: getErrorMessage(error) });
     }
   });
 
   app.patch('/api/users/:id', requireRole(['admin']), async (req, res) => {
     try {
-      const user = await storage.updateUser(req.params.id, req.body);
+      const updates = { ...req.body };
+      if (updates.password) {
+        updates.password = await hashPassword(updates.password);
+      }
+
+      const user = await storage.updateUser(req.params.id, updates);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
+
+      const { password: _password, ...auditDetails } = updates;
       
       // Log audit
       await storage.createAuditLog({
-        userId: req.user.id,
+        userId: req.user!.id,
         action: 'UPDATE_USER',
         resourceType: 'user',
         resourceId: req.params.id,
-        details: req.body,
+        details: auditDetails,
         ipAddress: req.ip,
         userAgent: req.get('User-Agent'),
       });
       
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error) {
       res.status(400).json({ message: 'Failed to update user' });
     }
@@ -501,20 +512,20 @@ export function registerRoutes(app: Express): Server {
     try {
       const stats: any = {};
       
-      if (req.user.role === 'admin' || req.user.role === 'procurement_officer') {
+      if (req.user!.role === 'admin' || req.user!.role === 'procurement_officer') {
         const allTenders = await storage.getTenders();
         stats.activeTenders = allTenders.filter(t => t.status === 'active').length;
         stats.completedTenders = allTenders.filter(t => t.status === 'completed').length;
         stats.pendingClarifications = (await storage.getPendingClarifications()).length;
         
-        if (req.user.role === 'admin') {
+        if (req.user!.role === 'admin') {
           const allUsers = await storage.getAllUsers();
           stats.totalBidders = allUsers.filter(u => u.role === 'bidder').length;
         }
       }
       
-      if (req.user.role === 'bidder') {
-        const myBids = await storage.getBidsByBidder(req.user.id);
+      if (req.user!.role === 'bidder') {
+        const myBids = await storage.getBidsByBidder(req.user!.id);
         stats.submittedBids = myBids.length;
         stats.acceptedBids = myBids.filter(b => b.status === 'accepted').length;
       }

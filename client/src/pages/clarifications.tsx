@@ -50,12 +50,12 @@ export default function Clarifications() {
   });
 
   // Fetch clarifications based on user role
-  const { data: clarifications, isLoading } = useQuery({
+  const { data: clarifications, isLoading } = useQuery<any[]>({
     queryKey: ["/api/clarifications"],
   });
 
   // Fetch tenders for dropdown (bidders only)
-  const { data: tenders } = useQuery({
+  const { data: tenders } = useQuery<any[]>({
     queryKey: ["/api/tenders"],
     enabled: user?.role === 'bidder',
   });
@@ -130,7 +130,7 @@ export default function Clarifications() {
   };
 
   const getStatusText = (status: string) => {
-    const statusMap = {
+    const statusMap: Record<string, string> = {
       pending: t('clarification.status.pending', 'Pending'),
       answered: t('clarification.status.answered', 'Answered'),
       published: t('clarification.status.published', 'Published'),
@@ -296,7 +296,7 @@ export default function Clarifications() {
                               {getStatusText(clarification.status)}
                             </Badge>
                             {clarification.isPublic && (
-                              <Globe className="w-4 h-4 text-muted-foreground" title={t('clarifications.public', 'Public')} />
+                              <Globe className="w-4 h-4 text-muted-foreground" aria-label={t('clarifications.public', 'Public')} />
                             )}
                           </div>
                         </div>

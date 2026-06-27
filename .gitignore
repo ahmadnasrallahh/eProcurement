@@ -1,6 +1,25 @@
-node_modules
-dist
-.DS_Store
-server/public
-vite.config.ts.*
+# Dependencies and builds
+node_modules/
+dist/
+server/public/
 *.tar.gz
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Local databases and runtime state
+*.db
+*.sqlite
+*.sqlite3
+uploads/
+.local/
+.replit
+replit.nix
+
+# Tool and OS state
+.DS_Store
+vite.config.ts.*
+coverage/
+*.log

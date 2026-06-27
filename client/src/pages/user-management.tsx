@@ -16,6 +16,19 @@ import { useAuth } from "@/hooks/use-auth";
 import { formatInTimezone } from "@/lib/timezone";
 import { apiRequest } from "@/lib/queryClient";
 
+type UserRole = "bidder" | "procurement_officer" | "admin";
+
+interface CreateUserForm {
+  username: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  organizationName: string;
+  contactPerson: string;
+  phone: string;
+  address: string;
+}
+
 export default function UserManagement() {
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -25,18 +38,18 @@ export default function UserManagement() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [createUserForm, setCreateUserForm] = useState({
+  const [createUserForm, setCreateUserForm] = useState<CreateUserForm>({
     username: "",
     email: "",
     password: "",
-    role: "bidder" as const,
+    role: "bidder",
     organizationName: "",
     contactPerson: "",
     phone: "",
     address: "",
   });
 
-  const { data: users, isLoading, error } = useQuery({
+  const { data: users, isLoading, error } = useQuery<any[]>({
     queryKey: ["/api/users"],
     enabled: user?.role === 'admin',
   });
@@ -122,7 +135,7 @@ export default function UserManagement() {
   };
 
   const getRoleText = (role: string) => {
-    const roleMap = {
+    const roleMap: Record<string, string> = {
       admin: t('roles.admin', 'Administrator'),
       procurement_officer: t('roles.procurementOfficer', 'Procurement Officer'),
       bidder: t('roles.bidder', 'Bidder'),
@@ -235,7 +248,7 @@ export default function UserManagement() {
                       <Label htmlFor="create-role">{t('auth.role', 'Role')}</Label>
                       <Select
                         value={createUserForm.role}
-                        onValueChange={(value: "bidder" | "procurement_officer" | "admin") => 
+                        onValueChange={(value: UserRole) =>
                           setCreateUserForm({ ...createUserForm, role: value })
                         }
                       >

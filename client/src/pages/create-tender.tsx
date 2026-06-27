@@ -34,6 +34,12 @@ const tenderSchema = z.object({
 
 type TenderFormData = z.infer<typeof tenderSchema>;
 
+type TenderPayload = Omit<TenderFormData, "requirements" | "evaluationCriteria"> & {
+  status: "draft" | "active";
+  requirements?: { text: string };
+  evaluationCriteria?: { text: string };
+};
+
 export default function CreateTender() {
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -59,7 +65,7 @@ export default function CreateTender() {
   });
 
   const createTenderMutation = useMutation({
-    mutationFn: async (data: TenderFormData & { status: string }) => {
+    mutationFn: async (data: TenderPayload) => {
       // First create the tender
       const res = await apiRequest("POST", "/api/tenders", data);
       const tender = await res.json();
@@ -105,7 +111,7 @@ export default function CreateTender() {
 
   const onSubmit = (data: TenderFormData) => {
     // Parse requirements and evaluation criteria as JSON if provided
-    const payload = {
+    const payload: TenderPayload = {
       ...data,
       status: isDraft ? 'draft' : 'active',
       requirements: data.requirements ? { text: data.requirements } : undefined,

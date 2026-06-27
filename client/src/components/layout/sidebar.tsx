@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import type { DashboardStats } from "@/lib/api-types";
+import type { LucideIcon } from "lucide-react";
 import {
   Home,
   File,
@@ -24,12 +26,19 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+interface NavItem {
+  label: string;
+  icon: LucideIcon;
+  path: string;
+  badge?: number;
+}
+
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [location, setLocation] = useLocation();
 
-  const { data: stats } = useQuery({
+  const { data: stats } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
   });
 
@@ -44,7 +53,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     return false;
   };
 
-  const adminNavItems = [
+  const adminNavItems: NavItem[] = [
     {
       label: t('nav.dashboard', 'Dashboard'),
       icon: Home,
@@ -78,7 +87,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     },
   ];
 
-  const procurementNavItems = [
+  const procurementNavItems: NavItem[] = [
     {
       label: t('nav.dashboard', 'Dashboard'),
       icon: Home,
@@ -112,7 +121,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     },
   ];
 
-  const bidderNavItems = [
+  const bidderNavItems: NavItem[] = [
     {
       label: t('nav.dashboard', 'Dashboard'),
       icon: Home,
